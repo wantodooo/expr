@@ -24,6 +24,7 @@ func CalcServer(w http.ResponseWriter, req *http.Request) {
 			req.Form.Set("e", err.Error())
 		}
 	}
+	req.Form.Set("r", serveRoute)
 	templ.Execute(w, req.Form)
 }
 
