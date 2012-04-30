@@ -9,12 +9,20 @@ import (
 
 // Post-order traversal, equivalent to postfix notation.
 func Eval(node interface{}) (*big.Int, error) {
-	z := big.NewInt(0)
+	z := &big.Int{}
 	switch nn := node.(type) {
 	case *ast.BinaryExpr:
 		x, xerr := Eval(nn.X)
 		if xerr != nil {
 			return nil, xerr
+		}
+		if ystar, ok := nn.Y.(*ast.StarExpr); ok && nn.Op == token.MUL {
+			// exponentiation
+			y, yerr := Eval(ystar.X)
+			if yerr != nil {
+				return nil, yerr
+			}
+			return z.Exp(x, y, nil), nil
 		}
 		y, yerr := Eval(nn.Y)
 		if yerr != nil {
