@@ -28,9 +28,33 @@ func Eval(node interface{}) (*big.Int, error) {
 		case token.MUL:
 			return z.Mul(x, y), nil
 		case token.QUO:
+			if y.Cmp(z) == 0 { // 0 denominator
+				return nil, DivideByZero
+			}
 			return z.Quo(x, y), nil
 		case token.REM:
+			if y.Cmp(z) == 0 {
+				return nil, DivideByZero
+			}
 			return z.Rem(x, y), nil
+		case token.AND:
+			return z.And(x, y), nil
+		case token.OR:
+			return z.Or(x, y), nil
+		case token.XOR:
+			return z.Xor(x, y), nil
+		case token.SHL:
+			if y.Cmp(z) < 0 { // negative shift
+				return nil, NegativeShift
+			}
+			return z.Lsh(x, uint(y.Int64())), nil
+		case token.SHR:
+			if y.Cmp(z) < 0 {
+				return nil, NegativeShift
+			}
+			return z.Rsh(x, uint(y.Int64())), nil
+		case token.AND_NOT:
+			return z.AndNot(x, y), nil
 		default:
 			return nil, UnknownOpErr
 		}
