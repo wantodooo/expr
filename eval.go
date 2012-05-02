@@ -28,12 +28,12 @@ func Eval(node interface{}) (*big.Int, error) {
 		case token.MUL:
 			return z.Mul(x, y), nil
 		case token.QUO:
-			if y.Cmp(z) == 0 { // 0 denominator
+			if y.Sign() == 0 { // 0 denominator
 				return nil, DivideByZero
 			}
 			return z.Quo(x, y), nil
 		case token.REM:
-			if y.Cmp(z) == 0 {
+			if y.Sign() == 0 {
 				return nil, DivideByZero
 			}
 			return z.Rem(x, y), nil
@@ -44,12 +44,12 @@ func Eval(node interface{}) (*big.Int, error) {
 		case token.XOR:
 			return z.Xor(x, y), nil
 		case token.SHL:
-			if y.Cmp(z) < 0 { // negative shift
+			if y.Sign() < 0 { // negative shift
 				return nil, NegativeShift
 			}
 			return z.Lsh(x, uint(y.Int64())), nil
 		case token.SHR:
-			if y.Cmp(z) < 0 {
+			if y.Sign() < 0 {
 				return nil, NegativeShift
 			}
 			return z.Rsh(x, uint(y.Int64())), nil
@@ -59,14 +59,18 @@ func Eval(node interface{}) (*big.Int, error) {
 			return nil, UnknownOpErr
 		}
 	case *ast.UnaryExpr:
-		z := new(big.Int)
+		var z *big.Int
+		var err error
+		if z, err = Eval(nn.X); err != nil {
+			return nil, err
+		}
 		switch nn.Op {
 		case token.SUB: // -x
-			return z.Neg(nn.X), nil
+			return z.Neg(z), nil
 		case token.XOR: // ^x
-			return z.Not(nn.X), nil
+			return z.Not(z), nil
 		case token.ADD: // +x (useless)
-			return nn.X, nil
+			return z, nil
 		}
 	case *ast.BasicLit:
 		z := new(big.Int)
