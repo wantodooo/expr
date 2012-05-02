@@ -9,20 +9,12 @@ import (
 
 // Post-order traversal, equivalent to postfix notation.
 func Eval(node interface{}) (*big.Int, error) {
-	z := &big.Int{}
 	switch nn := node.(type) {
 	case *ast.BinaryExpr:
+		z := new(big.Int)
 		x, xerr := Eval(nn.X)
 		if xerr != nil {
 			return nil, xerr
-		}
-		if ystar, ok := nn.Y.(*ast.StarExpr); ok && nn.Op == token.MUL {
-			// exponentiation
-			y, yerr := Eval(ystar.X)
-			if yerr != nil {
-				return nil, yerr
-			}
-			return z.Exp(x, y, nil), nil
 		}
 		y, yerr := Eval(nn.Y)
 		if yerr != nil {
@@ -66,7 +58,18 @@ func Eval(node interface{}) (*big.Int, error) {
 		default:
 			return nil, UnknownOpErr
 		}
+	case *ast.UnaryExpr:
+		z := new(big.Int)
+		switch nn.Op {
+		case token.SUB: // -x
+			return z.Neg(nn.X), nil
+		case token.XOR: // ^x
+			return z.Not(nn.X), nil
+		case token.ADD: // +x (useless)
+			return nn.X, nil
+		}
 	case *ast.BasicLit:
+		z := new(big.Int)
 		switch nn.Kind {
 		case token.INT:
 			z.SetString(nn.Value, 0)
@@ -75,11 +78,11 @@ func Eval(node interface{}) (*big.Int, error) {
 			return nil, UnknownLitErr
 		}
 	case *ast.ParenExpr:
-		x, xerr := Eval(nn.X)
-		if xerr != nil {
-			return nil, xerr
+		z, err := Eval(nn.X)
+		if err != nil {
+			return nil, err
 		}
-		return x, nil
+		return z, nil
 	case *ast.CallExpr:
 		ident, ok := nn.Fun.(*ast.Ident)
 		if !ok {
@@ -88,7 +91,7 @@ func Eval(node interface{}) (*big.Int, error) {
 		var f Func
 		f, ok = FuncMap[ident.Name]
 		if !ok {
-			return nil, UnknownLitErr // see above; probably new error here
+			return nil, UnknownFuncErr
 		}
 		var aerr error
 		args := make([]*big.Int, len(nn.Args))
