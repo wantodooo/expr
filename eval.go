@@ -80,10 +80,30 @@ func Eval(node interface{}) (*big.Int, error) {
 			return nil, xerr
 		}
 		return x, nil
-	default:
-		return nil, UnknownTokenErr
+	case *ast.CallExpr:
+		ident, ok := nn.Fun.(*ast.Ident)
+		if !ok {
+			return nil, UnknownTokenErr // quarter to four am; dunno correct error
+		}
+		var f Func
+		f, ok = FuncMap[ident.Name]
+		if !ok {
+			return nil, UnknownLitErr // see above; probably new error here
+		}
+		var aerr error
+		args := make([]*big.Int, len(nn.Args))
+		for i, a := range nn.Args {
+			if args[i], aerr = Eval(a); aerr != nil {
+				return nil, aerr
+			}
+		}
+		x, xerr := f.Call(args...)
+		if xerr != nil {
+			return nil, xerr
+		}
+		return x, nil
 	}
-	panic("unreachable")
+	return nil, UnknownTokenErr
 }
 
 // Evaluate an expression in a string.

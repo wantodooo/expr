@@ -9,4 +9,6 @@ var (
 
 	DivideByZero  = errors.New("division by zero")
 	NegativeShift = errors.New("negative shift")
+
+	ArgCountErr = errors.New("incorrect number of arguments")
 )
