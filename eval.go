@@ -104,7 +104,7 @@ func Eval(node interface{}) (*big.Int, error) {
 				return nil, aerr
 			}
 		}
-		x, xerr := f.Call(args...)
+		x, xerr := f(args...)
 		if xerr != nil {
 			return nil, xerr
 		}
